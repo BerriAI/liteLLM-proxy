@@ -121,19 +121,33 @@ All responses from the server are returned in the following format (for all LLM 
 ## Installation & Usage
 ### Running Locally
 1. Clone liteLLM repository to your local machine:
-   `git clone https://github.com/BerriAI/liteLLM-proxy`
+   ```
+   git clone https://github.com/BerriAI/liteLLM-proxy
+   ```
 2. Install the required dependencies using pip
-   `pip install requirements.txt`
+   ```
+   pip install requirements.txt
+   ```
 3. Set your LLM API keys
-   `os.environ['OPENAI_API_KEY]` = "YOUR_API_KEY"`
-   or set `OPENAI_API_KEY` in your `.env` file
+   ```
+   os.environ['OPENAI_API_KEY]` = "YOUR_API_KEY"
+   or
+   set OPENAI_API_KEY in your .env file
+   ```
 4. Run the server:
-   Run using
-   `python main.py`
+   ```
+   python main.py
+   ```
+
+   
 
 Deploying
-1. Quick Start: Deploy on Railway [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/DYqQAW?referralCode=t3ukrU)
-2. Using Docker. This project includes a Dockerfile, build a Docker Project on `GCP`, `AWS`, `Azure` for the same
+1. Quick Start: Deploy on Railway
+
+   [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/DYqQAW?referralCode=t3ukrU)
+   
+2. `GCP`, `AWS`, `Azure` 
+This project includes a `Dockerfile` allowing you to build and deploy a Docker Project on your providers
 
 
 
