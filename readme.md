@@ -8,7 +8,7 @@
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/_YF4Qj?referralCode=t3ukrU)
 
-# What does liteLLM proxy do
+## What does liteLLM proxy do
 - Make `/chat/completions` requests for 50+ LLM models **Azure, OpenAI, Replicate, Anthropic, Hugging Face**
   
   Example: for `model` use `claude-2`, `gpt-3.5`, `gpt-4`, `command-nightly`, `stabilityai/stablecode-completion-alpha-3b-4k`
@@ -24,8 +24,8 @@
   }
   ```
 - **Consistent Input/Output** Format
-    - Call all models using the OpenAI format - completion(model, messages)
-    - Text responses will always be available at ['choices'][0]['message']['content']
+    - Call all models using the OpenAI format - `completion(model, messages)`
+    - Text responses will always be available at `['choices'][0]['message']['content']`
 - **Error Handling** Using Model Fallbacks (if `GPT-4` fails, try `llama2`)
 - **Logging** - Log Requests, Responses and Errors to `Supabase`, `Posthog`, `Mixpanel`, `Sentry`, `Helicone` (Any of the supported providers here: https://litellm.readthedocs.io/en/latest/advanced/
 
