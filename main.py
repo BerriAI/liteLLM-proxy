@@ -5,8 +5,10 @@ import litellm
 
 from litellm import completion 
 import openai
-from utils import handle_error, get_cache, add_cache, generate_responses
+from utils import handle_error, get_cache, add_cache
 import os, dotenv
+import logging
+import json
 dotenv.load_dotenv()
 
 # TODO: set your keys in .env or here:
@@ -28,6 +30,10 @@ CORS(app)
 def index():
     return 'received!', 200
 
+def data_generator(response):
+    for chunk in response:
+        yield f"data: {json.dumps(chunk)}\n\n"
+
 @app.route('/chat/completions', methods=["POST"])
 def api_completion():
     data = request.json
@@ -37,12 +43,12 @@ def api_completion():
         # pass in data to completion function, unpack data
         response = completion(**data)
         if data['stream'] == True: # use generate_responses to stream responses
-            return Response(generate_responses(response), content_type='application/json')
+            return Response(data_generator(response), mimetype='text/event-stream')
     except Exception as e:
         # call handle_error function
         print(f"got error{e}")
         return handle_error(data)
-    return response, 200
+    return response, 200 # non streaming responses
 
 @app.route('/get_models', methods=["POST"])
 def get_models():
