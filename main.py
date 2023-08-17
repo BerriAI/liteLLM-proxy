@@ -42,7 +42,7 @@ def api_completion():
     try:
         # pass in data to completion function, unpack data
         response = completion(**data)
-        if data['stream'] == True: # use generate_responses to stream responses
+        if 'stream' in data and data['stream'] == True: # use generate_responses to stream responses
             return Response(data_generator(response), mimetype='text/event-stream')
     except Exception as e:
         # call handle_error function
