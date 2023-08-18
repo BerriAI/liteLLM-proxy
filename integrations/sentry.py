@@ -13,7 +13,6 @@ class Sentry:
         try:
             import sentry_sdk
         except ImportError:
-            self.print_verbose("Package 'sentry_sdk' is missing. Installing it...")
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'sentry_sdk'])
             import sentry_sdk
         sentry_sdk_instance = sentry_sdk
