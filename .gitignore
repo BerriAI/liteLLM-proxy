@@ -1,1 +1,18 @@
 .env
+
+# Ignore .DS_Store
+.DS_Store
+
+# Ignore venv
+venv/
+
+# Ignore pipenv
+Pipfile
+Pipfile.lock
+
+# Ignore poetry
+poetry.lock
+
+# Ignore other Python environment-related files
+*.pyc
+__pycache__/

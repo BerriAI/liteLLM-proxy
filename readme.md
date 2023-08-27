@@ -121,21 +121,27 @@ All responses from the server are returned in the following format (for all LLM 
 ## Installation & Usage
 ### Running Locally
 1. Clone liteLLM repository to your local machine:
-   ```
+   ```bash
    git clone https://github.com/BerriAI/liteLLM-proxy
    ```
-2. Install the required dependencies using pip
+
+2. Create your Python environment and activate it
+   ```bash
+   python -m venv venv && source venv/bin/activate
    ```
-   pip install requirements.txt
+
+3. Install the required dependencies using pip
+   ```bash
+   pip install -r requirements.txt
    ```
-3. Set your LLM API keys
-   ```
+4. Set your LLM API keys
+   ```bash
    os.environ['OPENAI_API_KEY]` = "YOUR_API_KEY"
    or
    set OPENAI_API_KEY in your .env file
    ```
-4. Run the server:
-   ```
+5. Run the server:
+   ```bash
    python main.py
    ```
 
