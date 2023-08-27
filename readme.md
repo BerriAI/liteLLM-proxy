@@ -132,7 +132,7 @@ All responses from the server are returned in the following format (for all LLM 
 
 3. Install the required dependencies using pip
    ```bash
-   pip install requirements.txt
+   pip install -r requirements.txt
    ```
 4. Set your LLM API keys
    ```bash
