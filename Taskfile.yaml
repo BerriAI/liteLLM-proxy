@@ -6,6 +6,7 @@ tasks:
   add:dev: poetry add {{.CLI_ARGS}} --group dev
   sync: poetry lock --no-update && poetry install --sync
   
+  serve: poetry run uvicorn proxy.main:app --port 3000 --host 0.0.0.0
   run: poetry run python3 {{.CLI_ARGS}}
   test: poetry run pytest {{.CLI_ARGS}}
   fmt: poetry run black proxy tests
