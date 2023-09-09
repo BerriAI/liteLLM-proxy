@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "proxy"
+version = "0.0.1"
+description = "Proxy server for fastrepl github app"
+authors = ["yujonglee <yujonglee.dev@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+litellm = "^0.1.549"
+backoff = "^2.2.1"
+fastapi = "^0.103.1"
+redis = "^5.0.0"
+uvicorn = "^0.23.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.1"
+mypy = "^1.5.0"
+black = "^23.7.0"
+httpx = "^0.24.1"
+
+[tool.mypy]
+exclude = [".venv"]
+explicit_package_bases = "True"
+ignore_missing_imports = "True"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

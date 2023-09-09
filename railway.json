@@ -7,6 +7,6 @@
       "healthcheckPath": "/health",
       "healthcheckTimeout": 300,
       "restartPolicyType": "ON_FAILURE",
-      "startCommand": "hypercorn main:app --bind \"[::]:$PORT\""
+      "startCommand": "poetry run uvicorn proxy.main:app --port $PORT --host 0.0.0.0"
     }
 }

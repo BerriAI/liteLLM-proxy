@@ -1,4 +1,4 @@
-from utils import getenv
+from proxy.utils import getenv
 
 import backoff
 import openai.error
@@ -16,6 +16,7 @@ litellm.cache = Cache(
     password=getenv("REDISPASSWORD", ""),
 )
 
+
 def custom_get_cache_key(*args, **kwargs):
     model = str(kwargs.get("model", ""))
     messages = str(kwargs.get("messages", ""))
@@ -31,7 +32,9 @@ def custom_get_cache_key(*args, **kwargs):
     finally:
         return key
 
+
 litellm.cache.get_cache_key = custom_get_cache_key
+
 
 class RetryConstantError(Exception):
     pass
@@ -40,8 +43,10 @@ class RetryConstantError(Exception):
 class RetryExpoError(Exception):
     pass
 
+
 class UnknownLLMError(Exception):
     pass
+
 
 def handle_llm_exception(e: Exception):
     if isinstance(
