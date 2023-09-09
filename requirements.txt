@@ -1,6 +1,6 @@
 fastapi==0.100.0
 hypercorn==0.14.4
-litellm==0.1.556
+litellm==0.1.569
 openai==0.27.8
 backoff==2.2.1
 redis==5.0.0

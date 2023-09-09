@@ -4,23 +4,9 @@ from utils import getenv
 from fastapi import FastAPI, Request, Response, status
 app = FastAPI()
 
-import redis
-r = redis.from_url(getenv("REDIS_URL", ""))
-
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health(response: Response):
-    try:
-        res = r.ping()
-        if res:
-            response.status_code = status.HTTP_200_OK
-            return
-        else:
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-            return
-    except Exception as e:
-        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        return {"error": str(e)}
-    
+    return
 
 @app.post("/chat/completions", status_code=status.HTTP_200_OK)
 async def completion(request: Request, response: Response):
@@ -29,4 +15,10 @@ async def completion(request: Request, response: Response):
         return
 
     data = await request.json()
+
+    data["cache_params"] = {}
+    for k, v in request.headers.items():
+        if k.startswith("X-FASTREPL"):
+            data["cache_params"][k] = v
+
     return llm.completion(**data)

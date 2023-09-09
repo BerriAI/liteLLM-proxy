@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from utils import getenv
 
 import backoff
 import openai.error
@@ -6,9 +6,25 @@ import openai.error
 import litellm
 import litellm.exceptions
 from litellm import ModelResponse
+from litellm.caching import Cache
 
 litellm.telemetry = False
+litellm.cache = Cache(
+    type="redis",
+    host=getenv("REDISHOST", ""),
+    port=getenv("REDISPORT", ""),
+    password=getenv("REDISPASSWORD", ""),
+)
 
+def custom_get_cache_key(*args, **kwargs):
+    model = str(kwargs.get("model", ""))
+    messages = str(kwargs.get("messages", ""))
+    temperature = str(kwargs.get("temperature", ""))
+    logit_bias = str(kwargs.get("logit_bias", ""))
+
+    return f"{model}:{messages}:{temperature}:{logit_bias}"
+
+litellm.cache.get_cache_key = custom_get_cache_key
 
 class RetryConstantException(Exception):
     pass
