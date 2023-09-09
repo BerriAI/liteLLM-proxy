@@ -26,11 +26,14 @@ def custom_get_cache_key(*args, **kwargs):
 
 litellm.cache.get_cache_key = custom_get_cache_key
 
-class RetryConstantException(Exception):
+class RetryConstantError(Exception):
     pass
 
 
-class RetryExpoException(Exception):
+class RetryExpoError(Exception):
+    pass
+
+class UnknownLLMError(Exception):
     pass
 
 def handle_llm_exception(e: Exception):
@@ -43,9 +46,9 @@ def handle_llm_exception(e: Exception):
             openai.error.ServiceUnavailableError,
         ),
     ):
-        raise RetryConstantException from e
+        raise RetryConstantError from e
     elif isinstance(e, openai.error.RateLimitError):
-        raise RetryExpoException from e
+        raise RetryExpoError from e
     elif isinstance(
         e,
         (
@@ -59,24 +62,44 @@ def handle_llm_exception(e: Exception):
     ):
         raise e
     else:
-        raise e
+        raise UnknownLLMError from e
 
 
 @backoff.on_exception(
     wait_gen=backoff.constant,
-    exception=(RetryConstantException),
+    exception=RetryConstantError,
     max_tries=3,
     interval=3,
 )
 @backoff.on_exception(
     wait_gen=backoff.expo,
-    exception=(RetryExpoException),
+    exception=RetryExpoError,
     jitter=backoff.full_jitter,
     max_value=100,
     factor=1.5,
 )
 def completion(**kwargs) -> ModelResponse:
+    LONGER_CONTEXT_MAPPING = {
+        "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
+        "gpt-3.5-turbo-0613": "gpt-3.5-turbo-16k-0613",
+        "gpt-4": "gpt-4-32k",
+        "gpt-4-0314": "gpt-4-32k-0314",
+        "gpt-4-0613": "gpt-4-32k-0613",
+    }
+
+    model = str(kwargs.get("model", ""))
+
+    def _completion(overide_model=None):
+        try:
+            if overide_model is not None:
+                kwargs["model"] = overide_model
+            return litellm.completion(**kwargs)
+        except Exception as e:
+            handle_llm_exception(e)
+
     try:
-        return litellm.completion(**kwargs)
-    except Exception as e:
-        handle_llm_exception(e)
+        return _completion()
+    except litellm.exceptions.ContextWindowExceededError as e:
+        if LONGER_CONTEXT_MAPPING.get(model) is None:
+            raise e
+        return _completion(LONGER_CONTEXT_MAPPING[model])
