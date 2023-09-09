@@ -22,7 +22,14 @@ def custom_get_cache_key(*args, **kwargs):
     temperature = str(kwargs.get("temperature", ""))
     logit_bias = str(kwargs.get("logit_bias", ""))
 
-    return f"{model}:{messages}:{temperature}:{logit_bias}"
+    key = f"{model}/{messages}/{temperature}/{logit_bias}"
+    try:
+        for k, v in kwargs.get("cache_params", {}).items():
+            key += f"/{k}:{v}"
+    except:
+        print("got invalid 'cache_params': ", str(kwargs.get("cache_params", "")))
+    finally:
+        return key
 
 litellm.cache.get_cache_key = custom_get_cache_key
 
