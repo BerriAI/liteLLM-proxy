@@ -1,5 +1,3 @@
-from typing import cast
-
 import proxy.llm as llm
 from proxy.utils import getenv
 
@@ -29,9 +27,6 @@ async def completion(request: Request, response: Response):
         return
 
     data = await request.json()
-
-    print(f"data: {data}")
-
     data["cache_params"] = {}
     for k, v in request.headers.items():
         if k.startswith("X-FASTREPL"):
@@ -45,7 +40,7 @@ async def generate_key(response: Response):
     api_key = f"sk-fastrepl-{secrets.token_urlsafe(16)}"
 
     # Append the new API key to the existing list in the Auth_Token variable
-    tokens_string = cast(str, os.getenv("AUTH_TOKEN", ""))
+    tokens_string = os.getenv("AUTH_TOKEN", "")
     auth_tokens = [tokens_string] if tokens_string != "" else []
     auth_tokens.append(api_key)
 
