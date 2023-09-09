@@ -19,13 +19,14 @@ async def completion(request: Request, response: Response):
 
     data = await request.json()
 
+    print(f"data: {data}")
+
     data["cache_params"] = {}
     for k, v in request.headers.items():
         if k.startswith("X-FASTREPL"):
             data["cache_params"][k] = v
 
     return llm.completion(**data)
-
 
 if __name__ == "__main__":
     import uvicorn
