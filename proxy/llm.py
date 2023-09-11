@@ -1,3 +1,7 @@
+from typing import Dict
+from collections import defaultdict
+import threading
+
 from proxy.utils import getenv
 
 import backoff
@@ -5,7 +9,6 @@ import openai.error
 
 import litellm
 import litellm.exceptions
-from litellm import ModelResponse
 from litellm.caching import Cache
 
 litellm.telemetry = False
@@ -15,6 +18,43 @@ litellm.cache = Cache(
     port=getenv("REDISPORT", ""),
     password=getenv("REDISPASSWORD", ""),
 )
+
+
+cost_dict: Dict[str, Dict[str, float]] = defaultdict(dict)
+cost_dict_lock = threading.Lock()
+
+
+def _update_costs(api_key, completion_response):
+    try:
+        model = completion_response.get("model", "")
+        cost = litellm.completion_cost(
+            model=model,
+            completion_response=completion_response,
+        )
+
+        with cost_dict_lock:
+            try:
+                cost_dict[api_key][model] += cost
+            except:
+                cost_dict[api_key][model] = cost
+    except Exception as e:
+        print(f"Error storing LLM costs: {e}")
+        return
+
+
+def _update_costs_thread(api_key, completion_response):
+    thread = threading.Thread(target=_update_costs, args=(api_key, completion_response))
+    thread.start()
+
+
+def reset_costs(key: str):
+    with cost_dict_lock:
+        cost_dict[key] = {}
+
+
+def get_costs(key: str):
+    with cost_dict_lock:
+        return cost_dict[key]
 
 
 def custom_get_cache_key(*args, **kwargs):
@@ -90,7 +130,7 @@ def handle_llm_exception(e: Exception):
     max_value=100,
     factor=1.5,
 )
-def completion(**kwargs) -> ModelResponse:
+def completion(**kwargs) -> litellm.ModelResponse:
     LONGER_CONTEXT_MAPPING = {
         "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
         "gpt-3.5-turbo-0613": "gpt-3.5-turbo-16k-0613",
@@ -99,13 +139,18 @@ def completion(**kwargs) -> ModelResponse:
         "gpt-4-0613": "gpt-4-32k-0613",
     }
 
+    api_key = kwargs.pop("api_key")
     model = str(kwargs.get("model", ""))
 
     def _completion(overide_model=None):
         try:
             if overide_model is not None:
                 kwargs["model"] = overide_model
-            return litellm.completion(**kwargs)
+
+            response = litellm.completion(**kwargs)
+            _update_costs_thread(api_key, response)  # Non-blocking
+
+            return response
         except Exception as e:
             handle_llm_exception(e)
 
