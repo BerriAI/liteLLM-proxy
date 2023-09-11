@@ -13,7 +13,7 @@ from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 
-budget_manager = BudgetManager(type="local")
+budget_manager = BudgetManager(project_name="fastrepl_proxy")
 app = FastAPI()
 valid_api_keys = set(["FASTREPL_INITIAL_KEY"])  # TODO: Should persist
 
