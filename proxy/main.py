@@ -14,7 +14,7 @@ app = FastAPI()
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health(response: Response):
-    return
+    return {"status": "ok"}
 
 
 @app.post("/chat/completions", status_code=status.HTTP_200_OK)
@@ -24,7 +24,7 @@ async def completion(request: Request, response: Response):
 
     if request.headers.get("Authorization") not in tokens:
         response.status_code = status.HTTP_401_UNAUTHORIZED
-        return
+        return {"error": "Unauthorized: invalid 'AUTH_TOKEN'"}
 
     data = await request.json()
     data["cache_params"] = {}
