@@ -7,11 +7,13 @@ from dotenv import load_dotenv
 
 load_dotenv(".env")
 
+import litellm
+
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 app = FastAPI()
-valid_api_keys = set(["FASTREPL_INITIAL_KEY"]) # TODO: Should persist
+valid_api_keys = set(["FASTREPL_INITIAL_KEY"])  # TODO: Should persist
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -48,6 +50,7 @@ async def completion(request: Request, response: Response):
     data = await request.json()
     data["api_key"] = key
     data["cache_params"] = {}
+    data["budget_manager"] = litellm.budget_manager
 
     for k, v in request.headers.items():
         if k.startswith("X-FASTREPL"):
@@ -56,12 +59,26 @@ async def completion(request: Request, response: Response):
     return llm.completion(**data)
 
 
-@app.get("/key/new", dependencies=[Depends(api_key_auth)])
-async def generate_key():
+@app.post("/key/new", dependencies=[Depends(api_key_auth)])
+async def generate_key(request: Request):
+    try:
+        data = await request.json()
+        data.get("total_budget")
+    except:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+    total_budget = data["total_budget"]
+
     api_key = f"sk-fastrepl-{secrets.token_urlsafe(16)}"
     valid_api_keys.add(api_key)
     valid_api_keys.discard("FASTREPL_INITIAL_KEY")
-    return {"api_key": api_key}
+
+    try:
+        litellm.budget_manager.create_budget(total_budget=total_budget, user=api_key)
+    except:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return {"api_key": api_key, "total_budget": total_budget}
 
 
 if __name__ == "__main__":

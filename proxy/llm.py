@@ -2,6 +2,8 @@ from typing import Dict
 from collections import defaultdict
 import threading
 
+from fastapi import HTTPException
+
 from proxy.utils import getenv
 
 import backoff
@@ -140,12 +142,21 @@ def completion(**kwargs) -> litellm.ModelResponse:
     }
 
     api_key = kwargs.pop("api_key")
+    budget_manager = kwargs.pop("budget_manager")
+
     model = str(kwargs.get("model", ""))
 
     def _completion(overide_model=None):
         try:
             if overide_model is not None:
                 kwargs["model"] = overide_model
+
+            if budget_manager.get_current_cost(
+                user=api_key
+            ) > budget_manager.get_total_budget(user=api_key):
+                raise HTTPException(
+                    status_code=429, detail={"error": "budget exceeded"}
+                )
 
             response = litellm.completion(**kwargs)
             _update_costs_thread(api_key, response)  # Non-blocking

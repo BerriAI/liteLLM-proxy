@@ -47,11 +47,17 @@ def test_auth(mock_client, mock_llm, use_valid_api_key):
     )
     assert response.status_code == 401
 
-    response = mock_client.get("/key/new", headers={"Authorization": "NONE"})
+    response = mock_client.post(
+        "/key/new",
+        headers={"Authorization": "NONE"},
+        json={"total_budget": 1},
+    )
     assert response.status_code == 401
 
-    response = mock_client.get(
-        "/key/new", headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"}
+    response = mock_client.post(
+        "/key/new",
+        headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+        json={"total_budget": 1},
     )
     assert response.status_code == 200
     key = response.json()["api_key"]
@@ -64,34 +70,75 @@ def test_auth(mock_client, mock_llm, use_valid_api_key):
 
 def test_cost(mock_client, mock_llm, use_valid_api_key):
     response = mock_client.post(
-        "/chat/completions",
+        "/key/new",
         headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+        json={"total_budget": 100},
+    )
+    assert response.status_code == 200
+    key = response.json()["api_key"]
+
+    # once
+    response = mock_client.post(
+        "/chat/completions",
+        headers={"Authorization": f"Bearer {key}"},
         json={},
     )
-
     response = mock_client.get(
-        "/cost/current", headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"}
+        "/cost/current", headers={"Authorization": f"Bearer {key}"}
     )
     costs = response.json()
     assert costs["gpt-3.5-turbo"] == pytest.approx(2.7499e-05, abs=1e10)
 
+    # twice
     response = mock_client.post(
         "/chat/completions",
-        headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+        headers={"Authorization": f"Bearer {key}"},
         json={},
     )
-
     response = mock_client.get(
-        "/cost/current", headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"}
+        "/cost/current", headers={"Authorization": f"Bearer {key}"}
     )
     costs = response.json()
     assert costs["gpt-3.5-turbo"] == pytest.approx(2 * 2.7499e-05, abs=1e10)
 
-    mock_client.get(
-        "/cost/reset", headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"}
-    )
+    # reset
+    mock_client.get("/cost/reset", headers={"Authorization": f"Bearer {key}"})
     response = mock_client.get(
-        "/cost/current", headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"}
+        "/cost/current", headers={"Authorization": f"Bearer {key}"}
     )
     costs = response.json()
     assert costs == {}
+
+
+def test_budget(mock_client, mock_llm, use_valid_api_key):
+    response = mock_client.post(
+        "/key/new",
+        headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+        json={"total_budget": 1e-05},
+    )
+    assert response.status_code == 200
+    key = response.json()["api_key"]
+
+    # once
+    response = mock_client.post(
+        "/chat/completions",
+        headers={"Authorization": f"Bearer {key}"},
+        json={},
+    )
+    response = mock_client.get(
+        "/cost/current", headers={"Authorization": f"Bearer {key}"}
+    )
+    costs = response.json()
+    assert costs["gpt-3.5-turbo"] == pytest.approx(2.7499e-05, abs=1e10)
+
+    # twice
+    response = mock_client.post(
+        "/chat/completions",
+        headers={"Authorization": f"Bearer {key}"},
+        json={},
+    )
+    response = mock_client.get(
+        "/cost/current", headers={"Authorization": f"Bearer {key}"}
+    )
+    costs = response.json()
+    assert costs["gpt-3.5-turbo"] == pytest.approx(2 * 2.7499e-05, abs=1e10)
