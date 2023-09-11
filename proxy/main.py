@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 import litellm
-
+from litellm import BudgetManager
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
+
+budget_manager = BudgetManager(type="local")
 app = FastAPI()
 valid_api_keys = set(["FASTREPL_INITIAL_KEY"])  # TODO: Should persist
 
@@ -34,13 +36,13 @@ async def health():
 @app.get("/cost/reset", dependencies=[Depends(api_key_auth)])
 async def report_reset(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-    llm.reset_costs(key)
+    return budget_manager.reset_cost(key) # llm.reset_costs(key)
 
 
 @app.get("/cost/current", dependencies=[Depends(api_key_auth)])
 async def report_current(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-    return llm.get_costs(key)
+    return budget_manager.get_model_cost(key)  #llm.get_costs(key)
 
 
 @app.post("/chat/completions", dependencies=[Depends(api_key_auth)])
@@ -50,7 +52,7 @@ async def completion(request: Request, response: Response):
     data = await request.json()
     data["api_key"] = key
     data["cache_params"] = {}
-    data["budget_manager"] = litellm.budget_manager
+    data["budget_manager"] = budget_manager
 
     for k, v in request.headers.items():
         if k.startswith("X-FASTREPL"):
@@ -74,7 +76,7 @@ async def generate_key(request: Request):
     valid_api_keys.discard("FASTREPL_INITIAL_KEY")
 
     try:
-        litellm.budget_manager.create_budget(total_budget=total_budget, user=api_key)
+        budget_manager.create_budget(total_budget=total_budget, user=api_key)
     except:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

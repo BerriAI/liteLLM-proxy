@@ -44,8 +44,8 @@ def _update_costs(api_key, completion_response):
         return
 
 
-def _update_costs_thread(api_key, completion_response):
-    thread = threading.Thread(target=_update_costs, args=(api_key, completion_response))
+def _update_costs_thread(api_key, completion_response, budget_manager):
+    thread = threading.Thread(target=_update_costs, args=(api_key, completion_response, budget_manager))
     thread.start()
 
 
@@ -159,7 +159,8 @@ def completion(**kwargs) -> litellm.ModelResponse:
                 )
 
             response = litellm.completion(**kwargs)
-            _update_costs_thread(api_key, response)  # Non-blocking
+            budget_manager.update_cost(completion_obj=response, user=api_key) # updates both user 
+            # _update_costs_thread(api_key, response, budget_manager)  # Non-blocking
 
             return response
         except Exception as e:
