@@ -15,7 +15,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 budget_manager = BudgetManager(project_name="fastrepl_proxy")
 app = FastAPI()
-valid_api_keys = set(["FASTREPL_INITIAL_KEY"])  # TODO: Should persist
+valid_api_keys = set(["FASTREPL_INITIAL_KEY"] + budget_manager.get_users())    # TODO: Should persist
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
