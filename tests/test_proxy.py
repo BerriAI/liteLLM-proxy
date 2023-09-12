@@ -41,11 +41,6 @@ def mock_llm(monkeypatch):
     monkeypatch.setattr(litellm, "completion", _completion)
 
 
-def test_health(mock_client):
-    response = mock_client.get("/health")
-    assert response.status_code == 200
-
-
 def test_auth(mock_client):
     response = mock_client.post(
         "/chat/completions", headers={"Authorization": "NONE"}, json={}

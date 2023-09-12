@@ -1,9 +1,5 @@
 import secrets
 
-from dotenv import load_dotenv
-
-load_dotenv(".env")
-
 import proxy.llm as llm
 from proxy.utils import getenv
 
@@ -38,7 +34,20 @@ def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
 
 @app.get("/health")
 async def health():
-    return {"status": "OK"}
+    import redis
+
+    r = redis.Redis(
+        host=getenv("REDISHOST", ""),
+        port=getenv("REDISPORT", ""),
+        password=getenv("REDISPASSWORD", ""),
+    )
+
+    if r.ping():
+        r.close()
+        return {"status": "OK"}
+    else:
+        r.close()
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @app.get("/cost/reset", dependencies=[Depends(user_api_key_auth)])
