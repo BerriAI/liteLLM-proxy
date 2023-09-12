@@ -120,6 +120,13 @@ All responses from the server are returned in the following format (for all LLM 
 
 ## Installation & Usage
 ### Running Locally
+
+0. Add your API keys to `.env` file
+   ```bash
+   touch .env
+   echo OPENAI_API_KEY=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 >> .env
+   ```
+
 1. Clone liteLLM repository to your local machine:
    ```bash
    git clone https://github.com/BerriAI/liteLLM-proxy

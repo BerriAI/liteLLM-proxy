@@ -1,10 +1,19 @@
 import openai
+from dotenv import load_dotenv
 import os
 
-os.environ["OPENAI_API_KEY"] = "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"
+# Load the environment variables from the .env file
+load_dotenv()
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
-openai.api_base ="http://localhost:4000"
+# Access the API key
+api_key = os.getenv("OPENAI_API_KEY")
+
+# Set the API key
+os.environ["OPENAI_API_KEY"] = api_key
+
+# Now, you can use it as before
+openai.api_key = api_key
+openai.api_base = "http://localhost:4000"
 
 messages = [
     {
@@ -13,12 +22,6 @@ messages = [
     }
 ]
 
-# response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages, stream=True)
 response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages, user="krrish@berri.ai")
-# response = openai.ChatCompletion.create(model="command-nightly", messages=messages, user="ishaan@berri.ai")
-# response = openai.ChatCompletion.create(model="claude-instant-1", messages=messages, user="peter@berri.ai")
-print("got response", response)
-# response is a generator
 
-# for chunk in response:
-#     print(chunk)
+print("got response", response)
