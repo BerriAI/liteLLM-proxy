@@ -3,19 +3,31 @@ import pytest
 import litellm
 from fastapi.testclient import TestClient
 
-import proxy.llm as llm
-from proxy.main import app, valid_api_keys
+import proxy.main as main
 
 
 @pytest.fixture
 def mock_client():
-    client = TestClient(app)
+    client = TestClient(main.app)
     yield client
     client.close()
 
 
+FASTREPL_API_KEY = "FASTREPL_API_KEY"
+
+
+@pytest.fixture(autouse=True)
+def set_env(monkeypatch):
+    monkeypatch.setenv("FASTREPL_API_KEY", "FASTREPL_API_KEY")
+    monkeypatch.setattr(
+        main,
+        "budget_manager",
+        litellm.BudgetManager(type="local", project_name="fastrepl_proxy"),
+    )
+
+
 # TODO: consider https://docs.litellm.ai/docs/completion/mock_requests
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_llm(monkeypatch):
     def _completion(**kwargs):
         return {
@@ -29,20 +41,12 @@ def mock_llm(monkeypatch):
     monkeypatch.setattr(litellm, "completion", _completion)
 
 
-@pytest.fixture
-def use_valid_api_key():
-    valid_api_keys.clear()
-    valid_api_keys.add("FASTREPL_INITIAL_KEY")
-    yield
-    valid_api_keys.clear()
-
-
 def test_health(mock_client):
     response = mock_client.get("/health")
     assert response.status_code == 200
 
 
-def test_auth(mock_client, mock_llm, use_valid_api_key):
+def test_auth(mock_client):
     response = mock_client.post(
         "/chat/completions", headers={"Authorization": "NONE"}, json={}
     )
@@ -57,7 +61,7 @@ def test_auth(mock_client, mock_llm, use_valid_api_key):
 
     response = mock_client.post(
         "/key/new",
-        headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+        headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
         json={"total_budget": 1},
     )
     assert response.status_code == 200
@@ -69,10 +73,10 @@ def test_auth(mock_client, mock_llm, use_valid_api_key):
     assert response.status_code == 200
 
 
-def test_cost(mock_client, mock_llm, use_valid_api_key):
+def test_cost(mock_client):
     response = mock_client.post(
         "/key/new",
-        headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+        headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
         json={"total_budget": 100},
     )
     assert response.status_code == 200
@@ -112,10 +116,10 @@ def test_cost(mock_client, mock_llm, use_valid_api_key):
 
 
 class TestBudgetManager:
-    def test_budget_enough(self, mock_client, mock_llm, use_valid_api_key):
+    def test_budget_enough(self, mock_client):
         response = mock_client.post(
             "/key/new",
-            headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+            headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
             json={"total_budget": 2.7499e-05 + 1},
         )
         assert response.status_code == 200
@@ -133,10 +137,10 @@ class TestBudgetManager:
         costs = response.json()
         assert costs["gpt-3.5-turbo"] == pytest.approx(2.7499e-05, abs=1e10)
 
-    def test_budget_exceed(self, mock_client, mock_llm, use_valid_api_key):
+    def test_budget_exceed(self, mock_client):
         response = mock_client.post(
             "/key/new",
-            headers={"Authorization": "Bearer FASTREPL_INITIAL_KEY"},
+            headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
             json={"total_budget": 1.7499e-05},
         )
         assert response.status_code == 200
