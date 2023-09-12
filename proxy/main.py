@@ -14,8 +14,6 @@ budget_manager = BudgetManager(
     type="local" if getenv("PROXY_ENV", "") == "DEV" else "client",
 )
 
-assert budget_manager.type == "local"
-
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
@@ -33,7 +31,7 @@ def api_key_auth(api_key: str = Depends(oauth2_scheme)):
         )
 
 
-@app.get("/health", status_code=status.HTTP_200_OK)
+@app.get("/health")
 async def health():
     return {"status": "OK"}
 
