@@ -1,15 +1,20 @@
 import secrets
 
-import proxy.llm as llm
-from proxy.utils import getenv
-
 from dotenv import load_dotenv
 
 load_dotenv(".env")
 
-import litellm
+import proxy.llm as llm
+from proxy.utils import getenv
 
-budget_manager = litellm.BudgetManager(project_name="fastrepl_proxy")
+from litellm import BudgetManager
+
+budget_manager = BudgetManager(
+    project_name="fastrepl_proxy",
+    type="local" if getenv("PROXY_ENV", "") == "DEV" else "client",
+)
+
+assert budget_manager.type == "local"
 
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -17,7 +22,6 @@ from fastapi.security import OAuth2PasswordBearer
 app = FastAPI()
 
 valid_api_keys = set(["FASTREPL_INITIAL_KEY"] + budget_manager.get_users())
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
