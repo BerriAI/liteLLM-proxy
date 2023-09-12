@@ -8,14 +8,15 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 import litellm
-from litellm import BudgetManager
+
+budget_manager = litellm.BudgetManager(project_name="fastrepl_proxy")
+
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
-
-budget_manager = BudgetManager(project_name="fastrepl_proxy")
 app = FastAPI()
-valid_api_keys = set(["FASTREPL_INITIAL_KEY"] + budget_manager.get_users())    # TODO: Should persist
+
+valid_api_keys = set(["FASTREPL_INITIAL_KEY"] + budget_manager.get_users())
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -36,13 +37,13 @@ async def health():
 @app.get("/cost/reset", dependencies=[Depends(api_key_auth)])
 async def report_reset(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-    return budget_manager.reset_cost(key) # llm.reset_costs(key)
+    return budget_manager.reset_cost(key)
 
 
 @app.get("/cost/current", dependencies=[Depends(api_key_auth)])
 async def report_current(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-    return budget_manager.get_model_cost(key)  #llm.get_costs(key)
+    return budget_manager.get_model_cost(key)
 
 
 @app.post("/chat/completions", dependencies=[Depends(api_key_auth)])

@@ -21,42 +21,13 @@ litellm.cache = Cache(
     password=getenv("REDISPASSWORD", ""),
 )
 
-
 cost_dict: Dict[str, Dict[str, float]] = defaultdict(dict)
 cost_dict_lock = threading.Lock()
 
 
-# def _update_costs(api_key, completion_response):
-#     try:
-#         model = completion_response.get("model", "")
-#         cost = litellm.completion_cost(
-#             model=model,
-#             completion_response=completion_response,
-#         )
-
-#         with cost_dict_lock:
-#             try:
-#                 cost_dict[api_key][model] += cost
-#             except:
-#                 cost_dict[api_key][model] = cost
-#     except Exception as e:
-#         print(f"Error storing LLM costs: {e}")
-#         return
-
-
-def _update_costs_thread(budget_manager):
-    thread = threading.Thread(target=budget_manager.save_data) # update user budgets on client
+def _update_costs_thread(budget_manager: litellm.BudgetManager):
+    thread = threading.Thread(target=budget_manager.save_data)
     thread.start()
-
-
-def reset_costs(key: str):
-    with cost_dict_lock:
-        cost_dict[key] = {}
-
-
-def get_costs(key: str):
-    with cost_dict_lock:
-        return cost_dict[key]
 
 
 def custom_get_cache_key(*args, **kwargs):
@@ -142,7 +113,7 @@ def completion(**kwargs) -> litellm.ModelResponse:
     }
 
     api_key = kwargs.pop("api_key")
-    budget_manager = kwargs.pop("budget_manager")
+    budget_manager: litellm.BudgetManager = kwargs.pop("budget_manager")
 
     model = str(kwargs.get("model", ""))
 
@@ -159,7 +130,8 @@ def completion(**kwargs) -> litellm.ModelResponse:
                 )
 
             response = litellm.completion(**kwargs)
-            budget_manager.update_cost(completion_obj=response, user=api_key) # updates both user 
+            # updates both user
+            budget_manager.update_cost(completion_obj=response, user=api_key)
             _update_costs_thread(budget_manager)  # Non-blocking
 
             return response
