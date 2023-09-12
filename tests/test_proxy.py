@@ -22,7 +22,7 @@ def set_env(monkeypatch):
     monkeypatch.setattr(
         main,
         "budget_manager",
-        litellm.BudgetManager(type="local", project_name="fastrepl_proxy"),
+        litellm.BudgetManager(client_type="local", project_name="fastrepl_proxy"),
     )
 
 
