@@ -1,11 +1,11 @@
 import secrets
-
+import traceback
 import proxy.llm as llm
 from proxy.utils import getenv
 
 from litellm import BudgetManager
 
-budget_manager = BudgetManager(project_name="fastrepl_proxy")
+budget_manager = BudgetManager(project_name="fastrepl_proxy", client_type="hosted")
 
 from fastapi import FastAPI, Request, Response, status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -92,11 +92,12 @@ async def generate_key(request: Request):
     user_api_keys.add(api_key)
 
     try:
-        budget_manager.create_budget(total_budget=total_budget, user=api_key)
-    except:
+        budget_manager.create_budget(total_budget=total_budget, user=api_key, duration="monthly")
+    except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return {"api_key": api_key, "total_budget": total_budget}
+    return {"api_key": api_key, "total_budget": total_budget, "duration": "monthly"}
 
 
 if __name__ == "__main__":
