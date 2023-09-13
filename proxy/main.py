@@ -25,7 +25,7 @@ def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
 
 def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
-    if api_key != getenv("FASTREPL_API_KEY", ""):
+    if api_key != getenv("FASTREPL_PROXY_ADMIN_KEY", ""):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error": "Unauthorized"},

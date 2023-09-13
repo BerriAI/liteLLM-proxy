@@ -13,12 +13,12 @@ def mock_client():
     client.close()
 
 
-FASTREPL_API_KEY = "FASTREPL_API_KEY"
+FASTREPL_PROXY_ADMIN_KEY = "FASTREPL_PROXY_ADMIN_KEY"
 
 
 @pytest.fixture(autouse=True)
 def set_env(monkeypatch):
-    monkeypatch.setenv("FASTREPL_API_KEY", "FASTREPL_API_KEY")
+    monkeypatch.setenv("FASTREPL_PROXY_ADMIN_KEY", "FASTREPL_PROXY_ADMIN_KEY")
     monkeypatch.setattr(
         main,
         "budget_manager",
@@ -56,7 +56,7 @@ def test_auth(mock_client):
 
     response = mock_client.post(
         "/key/new",
-        headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
+        headers={"Authorization": f"Bearer {FASTREPL_PROXY_ADMIN_KEY}"},
         json={"total_budget": 1},
     )
     assert response.status_code == 200
@@ -71,7 +71,7 @@ def test_auth(mock_client):
 def test_cost(mock_client):
     response = mock_client.post(
         "/key/new",
-        headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
+        headers={"Authorization": f"Bearer {FASTREPL_PROXY_ADMIN_KEY}"},
         json={"total_budget": 100},
     )
     assert response.status_code == 200
@@ -114,7 +114,7 @@ class TestBudgetManager:
     def test_budget_enough(self, mock_client):
         response = mock_client.post(
             "/key/new",
-            headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
+            headers={"Authorization": f"Bearer {FASTREPL_PROXY_ADMIN_KEY}"},
             json={"total_budget": 2.7499e-05 + 1},
         )
         assert response.status_code == 200
@@ -135,7 +135,7 @@ class TestBudgetManager:
     def test_budget_exceed(self, mock_client):
         response = mock_client.post(
             "/key/new",
-            headers={"Authorization": f"Bearer {FASTREPL_API_KEY}"},
+            headers={"Authorization": f"Bearer {FASTREPL_PROXY_ADMIN_KEY}"},
             json={"total_budget": 1.7499e-05},
         )
         assert response.status_code == 200
