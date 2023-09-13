@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   push:
@@ -49,10 +49,3 @@ jobs:
 
       - name: Test
         run: task test
-      
-      - name: Install flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy to fly
-        run: flyctl deploy --config fly.toml --dockerfile Dockerfile
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
