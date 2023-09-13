@@ -92,7 +92,9 @@ async def generate_key(request: Request):
     user_api_keys.add(api_key)
 
     try:
-        budget_manager.create_budget(total_budget=total_budget, user=api_key, duration="monthly")
+        budget_manager.create_budget(
+            total_budget=total_budget, user=api_key, duration="monthly"
+        )
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

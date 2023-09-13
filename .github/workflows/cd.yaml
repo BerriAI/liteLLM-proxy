@@ -43,7 +43,7 @@ jobs:
         run: task lint
 
       - name: Format
-        run: task fmt
+        run: task fmt:ci
 
       - name: Test
         run: task test
