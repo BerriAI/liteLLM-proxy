@@ -20,7 +20,8 @@ def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
     if api_key not in user_api_keys:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": "Unauthorized"},
+            detail={"error": "invalid user key"},
+            # TODO: this will be {'detail': {'error': 'something'}}
         )
 
 
@@ -28,7 +29,8 @@ def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
     if api_key != getenv("FASTREPL_PROXY_ADMIN_KEY", ""):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": "Unauthorized"},
+            detail={"error": "invalid admin key"},
+            # TODO: this will be {'detail': {'error': 'something'}}
         )
 
 
@@ -63,7 +65,7 @@ async def report_current(request: Request):
 
 
 @app.post("/chat/completions", dependencies=[Depends(user_api_key_auth)])
-async def completion(request: Request, response: Response):
+async def completion(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
 
     data = await request.json()
@@ -89,12 +91,12 @@ async def generate_key(request: Request):
     total_budget = data["total_budget"]
 
     api_key = f"sk-fastrepl-{secrets.token_urlsafe(16)}"
-    user_api_keys.add(api_key)
 
     try:
         budget_manager.create_budget(
             total_budget=total_budget, user=api_key, duration="monthly"
         )
+        user_api_keys.add(api_key)
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
