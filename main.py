@@ -14,10 +14,18 @@ from fastapi.security import OAuth2PasswordBearer
 
 app = FastAPI()
 
+# supabase
+from supabase import create_client, Client
+import os
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+
+supabase: Client = create_client(url, key)
+
 user_api_keys = set(budget_manager.get_users())
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-
+# Utils for Auth 
 def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
     if api_key not in user_api_keys:
         raise HTTPException(
@@ -35,31 +43,14 @@ def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
             detail={"error": "invalid admin key"},
             # TODO: this will be {'detail': {'error': 'something'}}
         )
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
-@app.get("/cost/reset", dependencies=[Depends(user_api_key_auth)])
-async def report_reset(request: Request):
-    key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-    return budget_manager.reset_cost(key)
-
-
-@app.get("/cost/current", dependencies=[Depends(user_api_key_auth)])
-async def report_current(request: Request):
-    key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-    return budget_manager.get_model_cost(key)
-
+# end of utils for auth
 
 # for streaming
 def data_generator(response):
     for chunk in response:
         yield f"data: {json.dumps(chunk)}\n\n"
 
-
+# for completion
 @app.post("/chat/completions", dependencies=[Depends(user_api_key_auth)])
 async def completion(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
@@ -84,6 +75,48 @@ async def completion(request: Request):
     if 'stream' in data and data['stream'] == True: # use generate_responses to stream responses
             return StreamingResponse(data_generator(response), media_type='text/event-stream')
     return response
+
+
+# Endpoint for adding new LLMs
+@app.post("/litellm/add_key", dependencies=[Depends(fastrepl_auth)])
+async def save(request: Request):
+    try:
+        data = await request.json()
+        data.get("total_budget")
+    except:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+    total_budget = data["total_budget"]
+
+    api_key = f"sk-fastrepl-{secrets.token_urlsafe(16)}"
+
+    try:
+        budget_manager.create_budget(
+            total_budget=total_budget, user=api_key, duration="monthly"
+        )
+        user_api_keys.add(api_key)
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return {"api_key": api_key, "total_budget": total_budget, "duration": "monthly"}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+@app.get("/cost/reset", dependencies=[Depends(user_api_key_auth)])
+async def report_reset(request: Request):
+    key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
+    return budget_manager.reset_cost(key)
+
+
+@app.get("/cost/current", dependencies=[Depends(user_api_key_auth)])
+async def report_current(request: Request):
+    key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
+    return budget_manager.get_model_cost(key)
 
 
 @app.post("/key/new", dependencies=[Depends(fastrepl_auth)])
