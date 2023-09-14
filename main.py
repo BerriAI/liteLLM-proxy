@@ -2,12 +2,14 @@ import secrets
 import traceback
 import llm as llm
 from utils import getenv
+import json
 
 from litellm import BudgetManager
 
 budget_manager = BudgetManager(project_name="fastrepl_proxy", client_type="hosted")
 
 from fastapi import FastAPI, Request, status, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
 
 app = FastAPI()
@@ -52,6 +54,12 @@ async def report_current(request: Request):
     return budget_manager.get_model_cost(key)
 
 
+# for streaming
+def data_generator(response):
+    for chunk in response:
+        yield f"data: {json.dumps(chunk)}\n\n"
+
+
 @app.post("/chat/completions", dependencies=[Depends(user_api_key_auth)])
 async def completion(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
@@ -61,11 +69,21 @@ async def completion(request: Request):
     data["cache_params"] = {}
     data["budget_manager"] = budget_manager
 
+    # handle how users send streaming
+    if 'stream' in data:
+        if type(data['stream']) == str: # if users send stream as str convert to bool
+            # convert to bool
+            if data['stream'].lower() == "true":
+                data['stream'] = True # convert to boolean
+
     for k, v in request.headers.items():
         if k.startswith("X-FASTREPL"):
             data["cache_params"][k] = v
-
-    return llm.completion(**data)
+    
+    response = llm.completion(**data)
+    if 'stream' in data and data['stream'] == True: # use generate_responses to stream responses
+            return StreamingResponse(data_generator(response), media_type='text/event-stream')
+    return response
 
 
 @app.post("/key/new", dependencies=[Depends(fastrepl_auth)])

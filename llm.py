@@ -131,8 +131,11 @@ def completion(**kwargs) -> litellm.ModelResponse:
 
             response = litellm.completion(**kwargs)
             # updates both user
-            budget_manager.update_cost(completion_obj=response, user=api_key)
-            _update_costs_thread(budget_manager)  # Non-blocking
+            try:
+                budget_manager.update_cost(completion_obj=response, user=api_key)
+                _update_costs_thread(budget_manager)  # Non-blocking
+            except:
+                pass
 
             return response
         except Exception as e:
