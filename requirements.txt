@@ -3,3 +3,4 @@ fastapi
 litellm
 backoff
 redis
+supabase
