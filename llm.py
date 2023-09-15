@@ -30,25 +30,6 @@ def _update_costs_thread(budget_manager: litellm.BudgetManager):
     thread.start()
 
 
-def custom_get_cache_key(*args, **kwargs):
-    model = str(kwargs.get("model", ""))
-    messages = str(kwargs.get("messages", ""))
-    temperature = str(kwargs.get("temperature", ""))
-    logit_bias = str(kwargs.get("logit_bias", ""))
-
-    key = f"{model}/{messages}/{temperature}/{logit_bias}"
-    try:
-        for k, v in kwargs.get("cache_params", {}).items():
-            key += f"/{k}:{v}"
-    except:
-        print("got invalid 'cache_params': ", str(kwargs.get("cache_params", "")))
-    finally:
-        return key
-
-
-litellm.cache.get_cache_key = custom_get_cache_key
-
-
 class RetryConstantError(Exception):
     pass
 
@@ -111,10 +92,7 @@ def completion(**kwargs) -> litellm.ModelResponse:
         "gpt-4-0314": "gpt-4-32k-0314",
         "gpt-4-0613": "gpt-4-32k-0613",
     }
-
-    api_key = kwargs.pop("api_key")
-    budget_manager: litellm.BudgetManager = kwargs.pop("budget_manager")
-
+    
     model = str(kwargs.get("model", ""))
 
     def _completion(overide_model=None):
@@ -122,20 +100,7 @@ def completion(**kwargs) -> litellm.ModelResponse:
             if overide_model is not None:
                 kwargs["model"] = overide_model
 
-            if budget_manager.get_current_cost(
-                user=api_key
-            ) > budget_manager.get_total_budget(user=api_key):
-                raise HTTPException(
-                    status_code=429, detail={"error": "budget exceeded"}
-                )
-
             response = litellm.completion(**kwargs)
-            # updates both user
-            try:
-                budget_manager.update_cost(completion_obj=response, user=api_key)
-                _update_costs_thread(budget_manager)  # Non-blocking
-            except:
-                pass
 
             return response
         except Exception as e:

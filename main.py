@@ -3,8 +3,9 @@ import traceback
 import llm as llm
 from utils import getenv
 import json
-
+import litellm
 from litellm import BudgetManager
+litellm.max_budget = 1000 
 
 budget_manager = BudgetManager(project_name="fastrepl_proxy", client_type="hosted")
 
@@ -57,25 +58,15 @@ def data_generator(response):
         yield f"data: {json.dumps(chunk)}\n\n"
 
 # for completion
-@app.post("/chat/completions", dependencies=[Depends(user_api_key_auth)])
+@app.post("/chat/completions")
 async def completion(request: Request):
-    key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
-
     data = await request.json()
-    data["api_key"] = key
-    data["cache_params"] = {}
-    data["budget_manager"] = budget_manager
-
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool
             # convert to bool
             if data['stream'].lower() == "true":
                 data['stream'] = True # convert to boolean
-
-    for k, v in request.headers.items():
-        if k.startswith("X-FASTREPL"):
-            data["cache_params"][k] = v
     
     response = llm.completion(**data)
     if 'stream' in data and data['stream'] == True: # use generate_responses to stream responses
