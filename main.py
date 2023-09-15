@@ -25,6 +25,12 @@ supabase: Client = create_client(url, key)
 user_api_keys = set(budget_manager.get_users())
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+USERS_KEYS = [
+    "sk-fastrepl-YWp4Yw0-3_g8eaHLK3EJLw",
+    "sk-liteplayground",
+    "sk-ishaantest"
+]
+
 # Utils for Auth 
 def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
     if api_key not in user_api_keys:
@@ -37,7 +43,7 @@ def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
 def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
     print(api_key)
-    if api_key != getenv("FASTREPL_PROXY_ADMIN_KEY", ""):
+    if api_key not in USERS_KEYS:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error": "invalid admin key"},
@@ -78,28 +84,42 @@ async def completion(request: Request):
 
 
 # Endpoint for adding new LLMs
+# use this to store your openai key
+# expects data to be {'provider': '', 'key': ''}
 @app.post("/litellm/add_key", dependencies=[Depends(fastrepl_auth)])
 async def save(request: Request):
     try:
+        print("got add key")
+        litellm_user_key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
         data = await request.json()
-        data.get("total_budget")
+        print(data)
+        provider = data.get("provider", "")
+        key = data.get("key", "")
     except:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    total_budget = data["total_budget"]
-
-    api_key = f"sk-fastrepl-{secrets.token_urlsafe(16)}"
-
+    provider = provider.upper() + "_API_KEY"
     try:
-        budget_manager.create_budget(
-            total_budget=total_budget, user=api_key, duration="monthly"
-        )
-        user_api_keys.add(api_key)
+        data = supabase.table('llm_api_keys').select("llm_keys").eq("admin_key", litellm_user_key).execute().data
+        if len(data)>0:
+            # need to update existing json for user:
+            llm_keys = data[0].get('llm_keys', {})
+            llm_keys[provider] = key
+            supabase_data_obj = {
+                "llm_keys": llm_keys
+            }
+            supabase.table("llm_api_keys").update(supabase_data_obj).eq("admin_key", litellm_user_key).execute()
+        else:
+            supabase_data_obj = {
+                "admin_key": litellm_user_key,
+                "llm_keys": { provider: key}
+            }
+            supabase.table("llm_api_keys").insert(supabase_data_obj).execute()
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return {"api_key": api_key, "total_budget": total_budget, "duration": "monthly"}
+    return {"status": "saved key", "key_name": provider}
 
 
 @app.get("/health")
