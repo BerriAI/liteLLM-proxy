@@ -1,3 +1,8 @@
+import sys, os
+sys.path.insert(
+    0, os.path.abspath("../")
+)  # Adds the parent directory to the system path
+
 import secrets
 import traceback
 import llm as llm
@@ -26,12 +31,6 @@ supabase: Client = create_client(url, key)
 user_api_keys = set(budget_manager.get_users())
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-USERS_KEYS = [
-    "sk-fastrepl-YWp4Yw0-3_g8eaHLK3EJLw",
-    "sk-liteplayground",
-    "sk-ishaantest"
-]
-
 # Utils for Auth 
 def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
     if api_key not in user_api_keys:
@@ -44,7 +43,7 @@ def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
 def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
     print(api_key)
-    if api_key not in USERS_KEYS:
+    if api_key not in os.getenv("USERS_KEYS"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error": "invalid admin key"},
@@ -61,6 +60,8 @@ def data_generator(response):
 @app.post("/chat/completions")
 async def completion(request: Request):
     data = await request.json()
+    print(f"received data: {data}")
+    data["max_tokens"] = 750
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool
