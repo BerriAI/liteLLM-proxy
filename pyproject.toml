@@ -8,10 +8,11 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-litellm = "^0.1.605"
+litellm = "^0.1.681"
 backoff = "^2.2.1"
 fastapi = "^0.103.1"
 redis = "^5.0.0"
+supabase = "^1.0.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.1"
