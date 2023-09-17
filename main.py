@@ -1,14 +1,14 @@
+# import sys, os
+# sys.path.insert(
+#     0, os.path.abspath("../")
+# )  # Adds the parent directory to the system path
+
 import secrets
 import traceback
 import llm as llm
 from utils import getenv
 import json
 import litellm
-import os
-print(os.path.dirname(os.path.abspath(litellm.__file__)))
-import pkg_resources
-version = pkg_resources.get_distribution("litellm").version
-print(version)
 from litellm import BudgetManager
 litellm.max_budget = 1000 
 

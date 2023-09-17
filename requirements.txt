@@ -1,6 +1,6 @@
 uvicorn
 fastapi
-litellm==0.1.683
+litellm==0.1.687
 backoff
 redis
 supabase
