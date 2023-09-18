@@ -1,7 +1,7 @@
-# import sys, os
-# sys.path.insert(
-#     0, os.path.abspath("../")
-# )  # Adds the parent directory to the system path
+import sys, os
+sys.path.insert(
+    0, os.path.abspath("../")
+)  # Adds the parent directory to the system path
 
 import secrets
 import traceback
@@ -12,7 +12,7 @@ import litellm
 from litellm import BudgetManager
 litellm.max_budget = 1000 
 
-budget_manager = BudgetManager(project_name="fastrepl_proxy", client_type="hosted")
+budget_manager = BudgetManager(project_name="litellm_proxy", client_type="hosted", api_base="http://0.0.0.0:4000")
 
 from fastapi import FastAPI, Request, status, HTTPException, Depends
 from fastapi.responses import StreamingResponse
@@ -43,6 +43,8 @@ def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
 def fastrepl_auth(api_key: str = Depends(oauth2_scheme)):
     print(api_key)
+    print(os.getenv("USERS_KEYS"))
+    user_keys = os.getenv("USERS_KEYS").split(",")
     if api_key not in os.getenv("USERS_KEYS"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -59,9 +61,13 @@ def data_generator(response):
 # for completion
 @app.post("/chat/completions")
 async def completion(request: Request):
+    key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
     data = await request.json()
     print(f"received data: {data}")
-    data["max_tokens"] = 750
+    data["api_key"] = key
+    data["cache_params"] = {}
+    data["budget_manager"] = budget_manager
+
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool
@@ -141,7 +147,7 @@ async def generate_key(request: Request):
 
     total_budget = data["total_budget"]
 
-    api_key = f"sk-fastrepl-{secrets.token_urlsafe(16)}"
+    api_key = f"sk-litellm-{secrets.token_urlsafe(16)}"
 
     try:
         budget_manager.create_budget(

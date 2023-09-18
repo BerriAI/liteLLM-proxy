@@ -92,6 +92,9 @@ def completion(**kwargs) -> litellm.ModelResponse:
         "gpt-4-0314": "gpt-4-32k-0314",
         "gpt-4-0613": "gpt-4-32k-0613",
     }
+
+    api_key = kwargs.pop("api_key")
+    budget_manager: litellm.BudgetManager = kwargs.pop("budget_manager")
     
     model = str(kwargs.get("model", ""))
 
@@ -99,8 +102,21 @@ def completion(**kwargs) -> litellm.ModelResponse:
         try:
             if overide_model is not None:
                 kwargs["model"] = overide_model
+            
+            if budget_manager.get_current_cost(
+                user=api_key
+            ) > budget_manager.get_total_budget(user=api_key):
+                raise HTTPException(
+                    status_code=429, detail={"error": "budget exceeded"}
+                )
+
 
             response = litellm.completion(**kwargs)
+
+            if "stream" not in kwargs or kwargs["stream"] is not True:
+                # updates both user
+                budget_manager.update_cost(completion_obj=response, user=api_key)
+                _update_costs_thread(budget_manager)  # Non-blocking
 
             return response
         except Exception as e:
