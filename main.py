@@ -17,8 +17,21 @@ budget_manager = BudgetManager(project_name="litellm_proxy", client_type="hosted
 from fastapi import FastAPI, Request, status, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordBearer
-
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
+origins = [
+    "http://localhost:3000",  # React app
+    "http://localhost:8080",  # Local
+    "https://docs.litellm.ai/",  # Production React app
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # supabase
 from supabase import create_client, Client
