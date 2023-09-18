@@ -1,7 +1,7 @@
-import sys, os
-sys.path.insert(
-    0, os.path.abspath("../")
-)  # Adds the parent directory to the system path
+# import sys, os
+# sys.path.insert(
+#     0, os.path.abspath("../")
+# )  # Adds the parent directory to the system path
 
 import secrets
 import traceback
@@ -12,7 +12,7 @@ import litellm
 from litellm import BudgetManager
 litellm.max_budget = 1000 
 
-budget_manager = BudgetManager(project_name="litellm_proxy", client_type="hosted", api_base="http://0.0.0.0:4000")
+budget_manager = BudgetManager(project_name="litellm_proxy", client_type="hosted")
 
 from fastapi import FastAPI, Request, status, HTTPException, Depends
 from fastapi.responses import StreamingResponse
