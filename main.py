@@ -62,7 +62,7 @@ def data_generator(response):
         yield f"data: {json.dumps(chunk)}\n\n"
 
 # for completion
-@app.post("/chat/completions")
+@app.post("/chat/completions", dependencies=[Depends(user_api_key_auth)])
 async def completion(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
     data = await request.json()
