@@ -67,7 +67,7 @@ async def completion(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
     data = await request.json()
     print(f"received data: {data}")
-    data["api_key"] = key
+    data["user_key"] = key
     data["cache_params"] = {}
     data["budget_manager"] = budget_manager
 

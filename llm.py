@@ -42,6 +42,36 @@ class UnknownLLMError(Exception):
     pass
 
 
+config = {
+    "function": "completion",
+    "default_fallback_models": ["gpt-3.5-turbo", "claude-instant-1", "j2-ultra"],
+    "available_models": litellm.utils.get_valid_models(),
+    "adapt_to_prompt_size": True,
+    "model": {
+        "claude-instant-1": {
+            "needs_moderation": True
+        },
+        "claude-2": {
+            "needs_moderation": True
+        },
+        "gpt-3.5-turbo": {
+            "error_handling": {
+                "ContextWindowExceededError": {"fallback_model": "gpt-3.5-turbo-16k"} 
+            }
+        },
+        "gpt-3.5-turbo-0613": {
+            "error_handling": {
+                "ContextWindowExceededError": {"fallback_model": "gpt-3.5-turbo-16k-0613"} 
+            }
+        }, 
+        "gpt-4": {
+            "error_handling": {
+                "ContextWindowExceededError": {"fallback_model": "claude-2"} 
+            }
+        }
+    }
+}
+
 def handle_llm_exception(e: Exception):
     if isinstance(
         e,
@@ -85,15 +115,8 @@ def handle_llm_exception(e: Exception):
     factor=1.5,
 )
 def completion(**kwargs) -> litellm.ModelResponse:
-    LONGER_CONTEXT_MAPPING = {
-        "gpt-3.5-turbo": "gpt-3.5-turbo-16k",
-        "gpt-3.5-turbo-0613": "gpt-3.5-turbo-16k-0613",
-        "gpt-4": "gpt-4-32k",
-        "gpt-4-0314": "gpt-4-32k-0314",
-        "gpt-4-0613": "gpt-4-32k-0613",
-    }
 
-    api_key = kwargs.pop("api_key")
+    user_key = kwargs.pop("user_key")
     budget_manager: litellm.BudgetManager = kwargs.pop("budget_manager")
     
     model = str(kwargs.get("model", ""))
@@ -104,18 +127,17 @@ def completion(**kwargs) -> litellm.ModelResponse:
                 kwargs["model"] = overide_model
             
             if budget_manager.get_current_cost(
-                user=api_key
-            ) > budget_manager.get_total_budget(user=api_key):
+                user=user_key
+            ) > budget_manager.get_total_budget(user=user_key):
                 raise HTTPException(
                     status_code=429, detail={"error": "budget exceeded"}
                 )
-
-
-            response = litellm.completion(**kwargs)
+            kwargs["config"] = config
+            response = litellm.completion_with_config(**kwargs)
 
             if "stream" not in kwargs or kwargs["stream"] is not True:
                 # updates both user
-                budget_manager.update_cost(completion_obj=response, user=api_key)
+                budget_manager.update_cost(completion_obj=response, user=user_key)
                 _update_costs_thread(budget_manager)  # Non-blocking
 
             return response
@@ -124,7 +146,5 @@ def completion(**kwargs) -> litellm.ModelResponse:
 
     try:
         return _completion()
-    except litellm.exceptions.ContextWindowExceededError as e:
-        if LONGER_CONTEXT_MAPPING.get(model) is None:
-            raise e
-        return _completion(LONGER_CONTEXT_MAPPING[model])
+    except Exception as e:
+        raise e
