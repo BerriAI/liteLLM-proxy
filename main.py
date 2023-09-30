@@ -28,13 +28,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+master_key = "sk-litellm-master-key"
 user_api_keys = set(budget_manager.get_users())
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 ######## AUTH UTILITIES ################
 
 def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
+    if api_key == master_key:
+        return
     if api_key not in user_api_keys:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -70,7 +72,7 @@ async def completion(request: Request):
     data["user_key"] = key
     data["cache_params"] = {}
     data["budget_manager"] = budget_manager
-
+    data["master_key"] = master_key
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool

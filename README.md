@@ -11,6 +11,29 @@
 
 ![4BC6491E-86D0-4833-B061-9F54524B2579](https://github.com/BerriAI/litellm/assets/17561003/f5dd237b-db5e-42e1-b1ac-f05683b1d724)
 
+
+## Usage 
+**Step 1: Put your API keys in .env** 
+Copy the .env.template and put in the relevant keys (e.g. OPENAI_API_KEY="sk-..")
+
+**Step 2: Test your proxy**
+Start your proxy server
+```shell
+$ cd litellm-proxy && python3 main.py 
+```
+
+Make your first call 
+```python
+import openai 
+
+openai.api_key = "sk-litellm-master-key"
+openai.api_base = "http://0.0.0.0:8080"
+
+response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": "Hey"}])
+
+print(response)
+```
+
 ## What does liteLLM proxy do
 
 - Make `/chat/completions` requests for 50+ LLM models **Azure, OpenAI, Replicate, Anthropic, Hugging Face**

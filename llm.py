@@ -117,8 +117,8 @@ def handle_llm_exception(e: Exception):
 def completion(**kwargs) -> litellm.ModelResponse:
 
     user_key = kwargs.pop("user_key")
+    master_key = kwargs.pop("master_key")
     budget_manager: litellm.BudgetManager = kwargs.pop("budget_manager")
-    
     model = str(kwargs.get("model", ""))
 
     def _completion(overide_model=None):
@@ -126,19 +126,26 @@ def completion(**kwargs) -> litellm.ModelResponse:
             if overide_model is not None:
                 kwargs["model"] = overide_model
             
-            if budget_manager.get_current_cost(
-                user=user_key
-            ) > budget_manager.get_total_budget(user=user_key):
-                raise HTTPException(
-                    status_code=429, detail={"error": "budget exceeded"}
-                )
             kwargs["config"] = config
-            response = litellm.completion_with_config(**kwargs)
+
+            if user_key == master_key:
+                response = litellm.completion_with_config(**kwargs)
+            else:
+                if budget_manager.get_current_cost(
+                    user=user_key
+                ) > budget_manager.get_total_budget(user=user_key):
+                    raise HTTPException(
+                        status_code=429, detail={"error": "budget exceeded"}
+                    )
+                response = litellm.completion_with_config(**kwargs)
 
             if "stream" not in kwargs or kwargs["stream"] is not True:
-                # updates both user
-                budget_manager.update_cost(completion_obj=response, user=user_key)
-                _update_costs_thread(budget_manager)  # Non-blocking
+                print(f"user_key: {user_key}")
+                print(f"master_key: {master_key}")
+                if user_key != master_key: # no budget on master key
+                    # updates both user
+                    budget_manager.update_cost(completion_obj=response, user=user_key)
+                    _update_costs_thread(budget_manager)  # Non-blocking
 
             return response
         except Exception as e:
