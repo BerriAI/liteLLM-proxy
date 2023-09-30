@@ -46,10 +46,7 @@ def user_api_key_auth(api_key: str = Depends(oauth2_scheme)):
 
 
 def key_auth(api_key: str = Depends(oauth2_scheme)):
-    print(api_key)
-    print(os.getenv("USERS_KEYS"))
-    user_keys = os.getenv("USERS_KEYS").split(",")
-    if api_key not in os.getenv("USERS_KEYS"):
+    if api_key != master_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error": "invalid admin key"},
