@@ -70,7 +70,7 @@ def model_list():
         {
             "id": model, 
             "object": model, 
-            "created": time.time(), 
+            "created": int(time.time()), 
             "owned_by": "openai"
         }
     return dict(
