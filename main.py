@@ -58,25 +58,8 @@ def key_auth(api_key: str = Depends(oauth2_scheme)):
 # for streaming
 def data_generator(response):
     for chunk in response:
-        print(f"chunk: {chunk}")
+        # print(f"chunk: {chunk}")
         yield f"data: {json.dumps(chunk)}\n\n"
-
-#### API ENDPOINTS ####
-@app.get("/models") # if project requires model list 
-def model_list(): 
-    available_models = litellm.utils.get_valid_models()
-    data = []
-    for model in available_models: 
-        {
-            "id": model, 
-            "object": model, 
-            "created": int(time.time()), 
-            "owned_by": "openai"
-        }
-    return dict(
-        data=data,
-        object="list",
-    )
 
 # for completion
 @app.post("/chat/completions", dependencies=[Depends(user_api_key_auth)])
@@ -103,6 +86,24 @@ async def completion(request: Request):
 @app.get("/models/available")
 def get_available_models():
     return {"models": litellm.utils.get_valid_models()}
+
+
+@app.get("/models") # if project requires model list 
+def model_list(): 
+    available_models = litellm.utils.get_valid_models()
+    data = []
+    for model in available_models: 
+        {
+            "id": model, 
+            "object": model, 
+            "created": int(time.time()), 
+            "owned_by": "openai"
+        }
+    return dict(
+        data=data,
+        object="list",
+    )
+
 
 @app.get("/health")
 async def health():
