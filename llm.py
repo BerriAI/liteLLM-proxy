@@ -10,6 +10,7 @@ import backoff
 import openai.error
 
 import litellm
+import os
 import litellm.exceptions
 from litellm.caching import Cache
 
@@ -89,10 +90,11 @@ def completion(**kwargs) -> litellm.ModelResponse:
     master_key = kwargs.pop("master_key")
     budget_manager: litellm.BudgetManager = kwargs.pop("budget_manager")
 
-    def _completion(overide_model=None):
+    def _completion():
         try:
-            if overide_model is not None:
-                kwargs["model"] = overide_model
+            default_model = os.getenv("DEFAULT_MODEL", None)
+            if default_model is not None and default_model != "":
+                kwargs["model"] = default_model
 
             if user_key == master_key:
                 # use as admin of the server
