@@ -13,12 +13,12 @@ import litellm
 import litellm.exceptions
 from litellm.caching import Cache
 
-litellm.cache = Cache( # optional if you want to use cache
-    type="redis",
-    host=getenv("REDISHOST", ""),
-    port=getenv("REDISPORT", ""),
-    password=getenv("REDISPASSWORD", ""),
-)
+# litellm.cache = Cache( # optional if you want to use cache
+#     type="redis",
+#     host=getenv("REDISHOST", ""),
+#     port=getenv("REDISPORT", ""),
+#     password=getenv("REDISPASSWORD", ""),
+# )
 
 cost_dict: Dict[str, Dict[str, float]] = defaultdict(dict)
 cost_dict_lock = threading.Lock()
