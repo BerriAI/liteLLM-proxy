@@ -83,9 +83,8 @@ def model_list():
 async def completion(request: Request):
     key = request.headers.get("Authorization").replace("Bearer ", "")  # type: ignore
     data = await request.json()
-    print(f"received data: {data}")
+    print(f"received request data: {data}")
     data["user_key"] = key
-    data["cache_params"] = {}
     data["budget_manager"] = budget_manager
     data["master_key"] = master_key
     # handle how users send streaming
@@ -143,5 +142,4 @@ async def generate_key(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=getenv("PORT", 8080))
