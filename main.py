@@ -6,7 +6,7 @@ import os
 import secrets
 import traceback
 import llm as llm
-from utils import getenv
+from utils import getenv, set_env_variables
 import json, time
 
 import litellm
@@ -70,6 +70,7 @@ async def completion(request: Request):
     data["user_key"] = key
     data["budget_manager"] = budget_manager
     data["master_key"] = master_key
+    set_env_variables()
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool
