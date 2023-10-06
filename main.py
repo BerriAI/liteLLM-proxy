@@ -70,7 +70,7 @@ async def completion(request: Request):
     data["user_key"] = key
     data["budget_manager"] = budget_manager
     data["master_key"] = master_key
-    set_env_variables()
+    set_env_variables(data)
     # handle how users send streaming
     if 'stream' in data:
         if type(data['stream']) == str: # if users send stream as str convert to bool
