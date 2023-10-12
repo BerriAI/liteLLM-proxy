@@ -163,13 +163,19 @@ All responses from the server are returned in the following format (for all LLM 
    ```
    pip install requirements.txt
    ```
-3. Set your LLM API keys
+3. (optional)Set your LiteLLM proxy master key
+   ```
+   os.environ['LITELLM_PROXY_MASTER_KEY]` = "YOUR_LITELLM_PROXY_MASTER_KEY"
+   or
+   set LITELLM_PROXY_MASTER_KEY in your .env file
+   ```
+4. Set your LLM API keys
    ```
    os.environ['OPENAI_API_KEY]` = "YOUR_API_KEY"
    or
    set OPENAI_API_KEY in your .env file
    ```
-4. Run the server:
+5. Run the server:
    ```
    python main.py
    ```

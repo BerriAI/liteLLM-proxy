@@ -28,7 +28,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-master_key = "sk-litellm-master-key"
+master_key = os.getenv("LITELLM_PROXY_MASTER_KEY", "sk-litellm-master-key")
 user_api_keys = set(budget_manager.get_users())
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
