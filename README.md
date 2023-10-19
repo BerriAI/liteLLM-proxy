@@ -1,5 +1,9 @@
 # liteLLM Proxy Server: 50+ LLM Models, Error Handling, Caching
 
+
+⚠️ DEPRECATION WARNING: [LiteLLM](https://github.com/BerriAI/litellm#openai-proxy-server-docs) is our new home. Thank you for checking us out! ❤️
+
+
 ### Azure, Llama2, OpenAI, Claude, Hugging Face, Replicate Models
 
 [![PyPI Version](https://img.shields.io/pypi/v/litellm.svg)](https://pypi.org/project/litellm/)
